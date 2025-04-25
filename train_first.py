@@ -74,6 +74,8 @@ def main(config_path):
     OOD_data = data_params['OOD_data']
     
     max_len = config.get('max_len', 200)
+
+    slm_model = config["slm_model"]
     
     # load data
     train_list, val_list = get_data_path_list(train_path, val_path)
