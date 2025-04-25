@@ -10,6 +10,7 @@ max_len: 400 # maximum number of frames
 pretrained_model: ""
 second_stage_load_pretrained: true # set to true if the pre-trained model is for 2nd stage
 load_only_params: false # set to true if do not want to load epoch numbers and optimizer parameters
+slm_model: "wavlm"
 
 F0_path: "Utils/JDC/bst.t7"
 ASR_config: "Utils/ASR/config.yml"
@@ -59,6 +60,13 @@ model_params:
   # speech language model config
   slm:
       model: 'microsoft/wavlm-base-plus'
+      sr: 16000 # sampling rate of SLM
+      hidden: 768 # hidden size of SLM
+      nlayers: 13 # number of layers of SLM
+      initial_channel: 64 # initial channels of SLM discriminator head
+  
+  wisper:
+      model: "openai/whisper-base"
       sr: 16000 # sampling rate of SLM
       hidden: 768 # hidden size of SLM
       nlayers: 13 # number of layers of SLM
