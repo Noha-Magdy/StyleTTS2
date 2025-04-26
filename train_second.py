@@ -126,6 +126,8 @@ def main(config_path):
     # build model
     model_params = recursive_munch(config['model_params'])
     multispeaker = model_params.multispeaker
+    slm_model = model_params.slm_model
+
     model = build_model(model_params, text_aligner, pitch_extractor, plbert)
     _ = [model[key].to(device) for key in model]
     
@@ -160,10 +162,18 @@ def main(config_path):
 
     gl = GeneratorLoss(model.mpd, model.msd).to(device)
     dl = DiscriminatorLoss(model.mpd, model.msd).to(device)
-    wl = WavLMLoss(model_params.slm.model, 
-                   model.wd, 
-                   sr, 
-                   model_params.slm.sr).to(device)
+    if slm_model == "wavlm":
+        wl = WavLMLoss(model_params.slm.model, 
+                    model.wd, 
+                    sr, 
+                    model_params.slm.sr).to(device)
+    
+    elif slm_model == "wisper":
+        wl = WisperLoss(model_params.wisper.model, 
+                    model.wd, 
+                    sr, 
+                    model_params.wisper.sr).to(device)
+    
 
     gl = MyDataParallel(gl)
     dl = MyDataParallel(dl)
