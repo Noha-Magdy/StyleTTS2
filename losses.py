@@ -258,13 +258,13 @@ class WavLMLoss(torch.nn.Module):
 class WisperLoss(torch.nn.Module):
 
     def __init__(self, model, wd, model_sr, slm_sr=16000):
-        super(WavLMLoss, self).__init__()
+        super(WisperLoss, self).__init__()
         self.wisper =  WhisperModel.from_pretrained(model)
         self.wd = wd
         self.resample = torchaudio.transforms.Resample(model_sr, slm_sr)
         self.processor = WhisperProcessor.from_pretrained(model)
         self.slm_sr = slm_sr
-        self.decoder_input_ids = torch.tensor([[1, 1]]) * wisper.config.decoder_start_token_id
+        self.decoder_input_ids = torch.tensor([[1, 1]]) * self.wisper.config.decoder_start_token_id
      
     def forward(self, wav, y_rec):
         print("wav shape",wav.shape)
