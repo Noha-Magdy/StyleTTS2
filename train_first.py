@@ -125,6 +125,8 @@ def main(config_path):
     multispeaker = model_params.multispeaker
     model = build_model(model_params, text_aligner, pitch_extractor, plbert)
 
+    slm_model = model_params.slm_model
+
     best_loss = float('inf')  # best test loss
     loss_train_record = list([])
     loss_test_record = list([])
@@ -168,11 +170,19 @@ def main(config_path):
     stft_loss = MultiResolutionSTFTLoss().to(device)
     gl = GeneratorLoss(model.mpd, model.msd).to(device)
     dl = DiscriminatorLoss(model.mpd, model.msd).to(device)
+    
     if slm_model == "wavlm":
         wl = WavLMLoss(model_params.slm.model, 
                     model.wd, 
                     sr, 
                     model_params.slm.sr).to(device)
+
+    elif slm_model == "wisper":
+        wl = WisperLoss(model_params.wisper.model, 
+                    model.wd, 
+                    sr, 
+                    model_params.wisper.sr).to(device)
+
 
     for epoch in range(start_epoch, epochs):
         running_loss = 0

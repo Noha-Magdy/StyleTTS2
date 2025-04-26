@@ -638,6 +638,14 @@ def build_model(args, text_aligner, pitch_extractor, bert):
     
     style_encoder = StyleEncoder(dim_in=args.dim_in, style_dim=args.style_dim, max_conv_dim=args.hidden_dim) # acoustic style encoder
     predictor_encoder = StyleEncoder(dim_in=args.dim_in, style_dim=args.style_dim, max_conv_dim=args.hidden_dim) # prosodic style encoder
+
+    slm_model = args.slm_model
+    print("alm model from models", slm_model)
+    if slm_model == "wavlm":
+        wd = WavLMDiscriminator(args.slm.hidden, args.slm.nlayers, args.slm.initial_channel)
+    elif slm_model == "wisper":
+        wd = WisperDiscriminator(args.wisper.hidden, args.wisper.nlayers, args.wisper.initial_channel)
+
         
     # define diffusion model
     if args.multispeaker:
@@ -688,7 +696,7 @@ def build_model(args, text_aligner, pitch_extractor, bert):
             msd = MultiResSpecDiscriminator(),
         
             # slm discriminator head
-            wd = WavLMDiscriminator(args.slm.hidden, args.slm.nlayers, args.slm.initial_channel),
+            wd = wd
        )
     
     return nets
