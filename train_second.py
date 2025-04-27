@@ -56,10 +56,10 @@ def main(config_path):
     log_dir = config['log_dir']
     if not osp.exists(log_dir): os.makedirs(log_dir, exist_ok=True)
     shutil.copy(config_path, osp.join(log_dir, osp.basename(config_path)))
-    writer = SummaryWriter(log_dir + "/tensorboard")
+    writer = SummaryWriter(log_dir + "/tensorboard2")
 
     # write logs
-    file_handler = logging.FileHandler(osp.join(log_dir, 'train.log'))
+    file_handler = logging.FileHandler(osp.join(log_dir, 'train2.log'))
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter('%(levelname)s:%(asctime)s: %(message)s'))
     logger.addHandler(file_handler)
@@ -222,6 +222,7 @@ def main(config_path):
         model, optimizer, start_epoch, iters = load_checkpoint(model,  optimizer, config['pretrained_model'],
                                     load_only_params=config.get('load_only_params', True))
         
+        
     n_down = model.text_aligner.n_down
 
     best_loss = float('inf')  # best test loss
@@ -250,19 +251,20 @@ def main(config_path):
                                 sig=slmadv_params.sig
                                )
 
-
+    print("Starting training...")
+    print("starting epoch:", start_epoch)
+    print("total epochs:", epochs)
     for epoch in range(start_epoch, epochs):
         running_loss = 0
         start_time = time.time()
 
         _ = [model[key].eval() for key in model]
-
         model.predictor.train()
         model.bert_encoder.train()
         model.bert.train()
         model.msd.train()
         model.mpd.train()
-
+        
 
         if epoch >= diff_epoch:
             start_ds = True
@@ -284,7 +286,6 @@ def main(config_path):
                     s2s_attn = s2s_attn.transpose(-1, -2)
                 except:
                     continue
-
                 mask_ST = mask_from_lens(s2s_attn, input_lengths, mel_input_length // (2 ** n_down))
                 s2s_attn_mono = maximum_path(s2s_attn, mask_ST)
 

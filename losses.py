@@ -259,7 +259,7 @@ class WisperLoss(torch.nn.Module):
 
     def __init__(self, model, wd, model_sr, slm_sr=16000):
         super(WisperLoss, self).__init__()
-        self.wisper =  WhisperModel.from_pretrained(model).to(device="cuda:0")
+        self.wisper =  WhisperModel.from_pretrained(model).to(device="cuda")
         self.wd = wd
         self.resample = torchaudio.transforms.Resample(model_sr, slm_sr)
         self.processor = WhisperProcessor.from_pretrained(model)
@@ -279,14 +279,14 @@ class WisperLoss(torch.nn.Module):
             
             input_features = self.processor(wav_16.cpu().numpy(), sampling_rate=self.slm_sr, return_tensors="pt").input_features
             
-            outputs = self.wisper(input_features.to(device="cuda:0"), decoder_input_ids=self.decoder_input_ids.to(device="cuda:0"))
+            outputs = self.wisper(input_features.to(device="cuda"), decoder_input_ids=self.decoder_input_ids.to(device="cuda"))
             wav_embeddings = outputs.encoder_last_hidden_state
             print("wav_embeddings shape", wav_embeddings.shape)
 
         y_rec_16 = self.resample(y_rec)
 
         input_features = self.processor(y_rec_16.detach().cpu().numpy(), sampling_rate=self.slm_sr, return_tensors="pt").input_features
-        outputs = self.wisper(input_features.to(device="cuda:0"), decoder_input_ids=self.decoder_input_ids.to(device="cuda:0"))
+        outputs = self.wisper(input_features.to(device="cuda"), decoder_input_ids=self.decoder_input_ids.to(device="cuda"))
         y_rec_embeddings = outputs.encoder_last_hidden_state
         print("y_rec_embeddings shape", y_rec_embeddings.shape)
 
