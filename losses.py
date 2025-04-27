@@ -259,29 +259,36 @@ class WisperLoss(torch.nn.Module):
 
     def __init__(self, model, wd, model_sr, slm_sr=16000):
         super(WisperLoss, self).__init__()
-        self.wisper =  WhisperModel.from_pretrained(model)
+        self.wisper =  WhisperModel.from_pretrained(model).to(device="cuda:0")
         self.wd = wd
         self.resample = torchaudio.transforms.Resample(model_sr, slm_sr)
         self.processor = WhisperProcessor.from_pretrained(model)
         self.slm_sr = slm_sr
         self.decoder_input_ids = torch.tensor([[1, 1]]) * self.wisper.config.decoder_start_token_id
+        
      
     def forward(self, wav, y_rec):
+        y_rec = torch.squeeze(y_rec, axis = 1)
         print("wav shape",wav.shape)
         print("y_rec shape", y_rec.shape)
+        
+
 
         with torch.no_grad():
             wav_16 = self.resample(wav)
-
-            input_features = self.processor(wav_16, sampling_rate=self.slm_sr, return_tensors="pt").input_features
-            outputs = self.wisper(input_features, decoder_input_ids=self.decoder_input_ids)
+            
+            input_features = self.processor(wav_16.cpu().numpy(), sampling_rate=self.slm_sr, return_tensors="pt").input_features
+            
+            outputs = self.wisper(input_features.to(device="cuda:0"), decoder_input_ids=self.decoder_input_ids.to(device="cuda:0"))
             wav_embeddings = outputs.encoder_last_hidden_state
+            print("wav_embeddings shape", wav_embeddings.shape)
 
         y_rec_16 = self.resample(y_rec)
 
-        input_features = self.processor(y_rec_16.squeeze(), sampling_rate=self.slm_sr, return_tensors="pt").input_features
-        outputs = self.wisper(input_features, decoder_input_ids=self.decoder_input_ids)
+        input_features = self.processor(y_rec_16.detach().cpu().numpy(), sampling_rate=self.slm_sr, return_tensors="pt").input_features
+        outputs = self.wisper(input_features.to(device="cuda:0"), decoder_input_ids=self.decoder_input_ids.to(device="cuda:0"))
         y_rec_embeddings = outputs.encoder_last_hidden_state
+        print("y_rec_embeddings shape", y_rec_embeddings.shape)
 
 
         floss = 0
@@ -291,6 +298,8 @@ class WisperLoss(torch.nn.Module):
         return floss.mean()
     
     def generator(self, y_rec):
+        y_rec = torch.squeeze(y_rec, axis = 1)
+
         y_rec_16 = self.resample(y_rec)
         input_features = self.processor(y_rec_16.squeeze(), sampling_rate=self.slm_sr, return_tensors="pt").input_features
         outputs = self.wisper(input_features, decoder_input_ids=self.decoder_input_ids)
@@ -303,6 +312,8 @@ class WisperLoss(torch.nn.Module):
         return loss_gen
     
     def discriminator(self, wav, y_rec):
+        y_rec = torch.squeeze(y_rec, axis = 1)
+
         with torch.no_grad():
             wav_16 = self.resample(wav)
             input_features = self.processor(wav_16, sampling_rate=self.slm_sr, return_tensors="pt").input_features
