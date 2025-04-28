@@ -5,9 +5,9 @@ log_interval: 10
 device: "cuda"
 epochs_1st: 200 # number of epochs for first stage training (pre-training)
 epochs_2nd: 100 # number of peochs for second stage training (joint training)
-batch_size: 16
+batch_size: 4
 max_len: 400 # maximum number of frames
-pretrained_model: ''
+pretrained_model: '/mnt/datadisk01/STTS2/StyleTTS2/Models/LJSpeech/epoch_2nd_00048.pth'
 second_stage_load_pretrained: true # set to true if the pre-trained model is for 2nd stage
 load_only_params: false # set to true if do not want to load epoch numbers and optimizer parameters
 
@@ -69,8 +69,8 @@ model_params:
   wisper:
       model: "openai/whisper-base"
       sr: 16000 # sampling rate of SLM
-      hidden: 768 # hidden size of SLM
-      nlayers: 13 # number of layers of SLM
+      hidden: 1500 # hidden size of SLM
+      nlayers: 512 # number of layers of SLM
       initial_channel: 64 # initial channels of SLM discriminator head
   
   # style diffusion model config

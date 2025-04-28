@@ -301,11 +301,13 @@ class WisperLoss(torch.nn.Module):
         y_rec = torch.squeeze(y_rec, axis = 1)
 
         y_rec_16 = self.resample(y_rec)
-        input_features = self.processor(y_rec_16.squeeze(), sampling_rate=self.slm_sr, return_tensors="pt").input_features
-        outputs = self.wisper(input_features, decoder_input_ids=self.decoder_input_ids)
+        input_features = self.processor(y_rec_16.detach().cpu().numpy(), sampling_rate=self.slm_sr, return_tensors="pt").input_features
+        outputs = self.wisper(input_features.to(device="cuda"), decoder_input_ids=self.decoder_input_ids.to(device="cuda"))
         y_rec_embeddings = outputs.encoder_last_hidden_state
-        print("y_rec_embeddings", y_rec_embeddings.shape)
-        y_rec_embeddings = torch.stack(y_rec_embeddings, dim=1).transpose(-1, -2).flatten(start_dim=1, end_dim=2)
+        print("y_rec_embeddings_gen", y_rec_embeddings.shape)
+        y_rec_embeddings = y_rec_embeddings.transpose(-1, -2).flatten(start_dim=1, end_dim=2)
+        print("y_rec_embeddings_gen after", y_rec_embeddings.shape)
+        y_rec_embeddings = torch.unsqueeze(y_rec_embeddings, -1)
         y_df_hat_g = self.wd(y_rec_embeddings)
         loss_gen = torch.mean((1-y_df_hat_g)**2)
         
@@ -316,19 +318,24 @@ class WisperLoss(torch.nn.Module):
 
         with torch.no_grad():
             wav_16 = self.resample(wav)
-            input_features = self.processor(wav_16, sampling_rate=self.slm_sr, return_tensors="pt").input_features
-            outputs = self.wisper(input_features, decoder_input_ids=self.decoder_input_ids)
+            input_features = self.processor(wav_16.cpu().numpy(), sampling_rate=self.slm_sr, return_tensors="pt").input_features
+            outputs = self.wisper(input_features.to(device="cuda"), decoder_input_ids=self.decoder_input_ids.to(device="cuda"))
             wav_embeddings = outputs.encoder_last_hidden_state
+            print("done disc1")
 
             y_rec_16 = self.resample(y_rec)
-            input_features = self.processor(y_rec_16.squeeze(), sampling_rate=self.slm_sr, return_tensors="pt").input_features
-            outputs = self.wisper(input_features, decoder_input_ids=self.decoder_input_ids)
+            input_features = self.processor(y_rec_16.cpu().numpy(), sampling_rate=self.slm_sr, return_tensors="pt").input_features
+            outputs = self.wisper(input_features.to(device="cuda"), decoder_input_ids=self.decoder_input_ids.to(device="cuda"))
             y_rec_embeddings = outputs.encoder_last_hidden_state
+            print("done disc2")
 
-            y_embeddings = torch.stack(wav_embeddings, dim=1).transpose(-1, -2).flatten(start_dim=1, end_dim=2)
-            y_rec_embeddings = torch.stack(y_rec_embeddings, dim=1).transpose(-1, -2).flatten(start_dim=1, end_dim=2)
+            wav_embeddings = wav_embeddings.transpose(-1, -2).flatten(start_dim=1, end_dim=2)
+            y_rec_embeddings = y_rec_embeddings.transpose(-1, -2).flatten(start_dim=1, end_dim=2)
 
-        y_d_rs = self.wd(y_embeddings)
+            y_rec_embeddings = torch.unsqueeze(y_rec_embeddings, -1)
+            wav_embeddings = torch.unsqueeze(wav_embeddings, -1)
+
+        y_d_rs = self.wd(wav_embeddings)
         y_d_gs = self.wd(y_rec_embeddings)
         
         y_df_hat_r, y_df_hat_g = y_d_rs, y_d_gs
@@ -343,12 +350,13 @@ class WisperLoss(torch.nn.Module):
     def discriminator_forward(self, wav):
         with torch.no_grad():
             wav_16 = self.resample(wav)
-            input_features = self.processor(wav_16, sampling_rate=self.slm_sr, return_tensors="pt").input_features
-            outputs = self.wisper(input_features, decoder_input_ids=self.decoder_input_ids)
+            input_features = self.processor(wav_16.cpu().numpy(), sampling_rate=self.slm_sr, return_tensors="pt").input_features
+            outputs = self.wisper(input_features.to(device="cuda"), decoder_input_ids=self.decoder_input_ids.to(device="cuda"))
             wav_embeddings = outputs.encoder_last_hidden_state
 
-            y_embeddings = torch.stack(wav_embeddings, dim=1).transpose(-1, -2).flatten(start_dim=1, end_dim=2)
+            wav_embeddings = wav_embeddings.transpose(-1, -2).flatten(start_dim=1, end_dim=2)
+            wav_embeddings = torch.unsqueeze(wav_embeddings, -1)
 
-        y_d_rs = self.wd(y_embeddings)
+        y_d_rs = self.wd(wav_embeddings)
         
         return y_d_rs
