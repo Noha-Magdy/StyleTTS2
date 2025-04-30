@@ -32,6 +32,6 @@ venv/
 #Ignore follwing folders
 
 Models/
-/Data2
-/Data
-/Dataold
+Data2/
+Data/
+Dataold/
