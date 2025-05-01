@@ -1,5 +1,5 @@
 log_dir: "Models/LJSpeech"
-first_stage_path: "/mnt/datadisk01/STTS2/StyleTTS2/Models/LJSpeech/epoch_1st_00194.pth"
+first_stage_path: "/mnt/Noha/StyleTTS2/Models/LJSpeech/epoch_1st_00194.pth"
 save_freq: 2
 log_interval: 10
 device: "cuda"
@@ -7,7 +7,7 @@ epochs_1st: 200 # number of epochs for first stage training (pre-training)
 epochs_2nd: 100 # number of peochs for second stage training (joint training)
 batch_size: 4
 max_len: 400 # maximum number of frames
-pretrained_model: '/mnt/datadisk01/STTS2/StyleTTS2/Models/LJSpeech/epoch_2nd_00072.pth'
+pretrained_model: ''
 second_stage_load_pretrained: true # set to true if the pre-trained model is for 2nd stage
 load_only_params: false # set to true if do not want to load epoch numbers and optimizer parameters
 
