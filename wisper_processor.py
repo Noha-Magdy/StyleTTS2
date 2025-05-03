@@ -4,6 +4,10 @@ from transformers.feature_extraction_utils import BatchFeature
 from transformers.models.whisper.feature_extraction_whisper import WhisperFeatureExtractor
 import types
 
+import torch
+from transformers import WhisperProcessor, WhisperModel
+from transformers.audio_utils import mel_filter_bank
+
 class DifferentiableWhisperFeatureExtractor(WhisperFeatureExtractor):
   def __init__(self, wfe:WhisperFeatureExtractor):
     self.hop_length=wfe.hop_length
