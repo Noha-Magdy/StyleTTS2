@@ -3,7 +3,6 @@ from transformers.utils import TensorType, logging
 from transformers.feature_extraction_utils import BatchFeature
 from transformers.models.whisper.feature_extraction_whisper import WhisperFeatureExtractor
 import types
-
 import torch
 from transformers import WhisperProcessor, WhisperModel
 from transformers.audio_utils import mel_filter_bank
@@ -16,6 +15,11 @@ class DifferentiableWhisperFeatureExtractor(WhisperFeatureExtractor):
     self.sampling_rate=wfe.sampling_rate
     self.feature_size=wfe.feature_size
     self.mel_filters = wfe.mel_filters
+    self.n_samples = wfe.n_samples
+    self.return_attention_mask = wfe.return_attention_mask
+    self.padding_side = wfe.padding_side
+    self.padding_value = wfe.padding_value
+
 
   def _hf_differentiable_extract_fbank_features(self, waveform, device=None):
     hop_length=self.hop_length
@@ -35,11 +39,11 @@ class DifferentiableWhisperFeatureExtractor(WhisperFeatureExtractor):
     if dither != 0.0:
         waveform += dither * torch.randn(waveform.shape, dtype=waveform.dtype, device=waveform.device)
 
-    print("stft.hop_length", hop_length)
-    print("stft.n_fft", n_fft)
+    # print("stft.hop_length", hop_length)
+    # print("stft.n_fft", n_fft)
 
     # print("stft.window", window)
-    print("stft.waveform", waveform.shape)
+    # print("stft.waveform", waveform.shape)
     stft = torch.stft(waveform, n_fft, hop_length, window=window, return_complex=True)
     magnitudes = stft[..., :-1].abs() ** 2 # WTF???
     # mel_filters = torch.from_numpy(self.mel_filters).to(device, torch.float32)
@@ -124,53 +128,31 @@ class DifferentiableWhisperFeatureExtractor(WhisperFeatureExtractor):
               Whether or not to return the number of frames of the input raw_speech.
               These num_frames can be used by the model to compute word level timestamps.
       """
-      # if sampling_rate is not None:
-      #     if sampling_rate != self.sampling_rate:
-      #         raise ValueError(
-      #             f"The model corresponding to this feature extractor: {self.__class__.__name__} was trained using a"
-      #             f" sampling rate of {self.sampling_rate}. Please make sure that the provided `raw_speech` input"
-      #             f" was sampled with {self.sampling_rate} and not {sampling_rate}."
-      #         )
-      # else:
-      #     logger.warning(
-      #         f"It is strongly recommended to pass the `sampling_rate` argument to `{self.__class__.__name__}()`. "
-      #         "Failing to do so can result in silent errors that might be hard to debug."
-      #     )
 
-      print("self", type(self))
+      batched_speech = BatchFeature({
+          "input_features": raw_speech
+      })
 
-      is_batched = True # Only batched data is supported. Batch is index 0. It is assumed that they are padded as well
+      # print("padding", padding)
+      # print("truncation", truncation)
+      # print("pad_to_multiple_of", pad_to_multiple_of)
+      # print("return_attention_mask", return_attention_mask)
+      # print("do_normalize", do_normalize)
 
+      max_length = max_length if max_length else self.n_samples
+      current_max_len = raw_speech.shape[-1]
 
+      if current_max_len > max_length:
+         raw_speech = raw_speech[..., 0:max_length]
+      elif current_max_len < max_length:
+        batch_size = raw_speech.shape[0]
+        new_len = max_length - current_max_len
+        zeros = torch.zeros((batch_size, new_len), device=raw_speech.device)
+        raw_speech = torch.concat([raw_speech, zeros], dim=1)
 
-
-
-      # zero-mean and unit-variance normalization. As this is the output of the gen model it is not needed
-      # if do_normalize:
-      #     padded_inputs["input_features"] = self.zero_mean_unit_var_norm(
-      #         padded_inputs["input_features"],
-      #         attention_mask=padded_inputs["attention_mask"],
-      #         padding_value=self.padding_value,
-      #     )
-      #     padded_inputs["input_features"] = np.stack(padded_inputs["input_features"], axis=0)
-
-      # # make sure list is in array format
-      # input_features = padded_inputs.get("input_features").transpose(2, 0, 1) # WHY? IDK
+      # print("raw_speech grads", raw_speech.requires_grad)
 
       input_features = self._hf_differentiable_extract_fbank_features(raw_speech, device)
-
-      # if isinstance(input_features[0], List):
-      #     padded_inputs["input_features"] = [np.asarray(feature, dtype=np.float32) for feature in input_features]
-
-      # else:
-      #     padded_inputs["input_features"] = input_features
-
-      # if return_attention_mask:
-      #     # rescale from sample (48000) to feature (3000)
-      #     padded_inputs["attention_mask"] = padded_inputs["attention_mask"][:, :: self.hop_length]
-
-      # if return_token_timestamps is not None:
-      #     padded_inputs["num_frames"] = [len(raw_speech_i) // self.hop_length for raw_speech_i in raw_speech]
 
       res = BatchFeature({
           "input_features": input_features
