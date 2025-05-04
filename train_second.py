@@ -56,10 +56,10 @@ def main(config_path):
     log_dir = config['log_dir']
     if not osp.exists(log_dir): os.makedirs(log_dir, exist_ok=True)
     shutil.copy(config_path, osp.join(log_dir, osp.basename(config_path)))
-    writer = SummaryWriter(log_dir + "/tensorboard2")
+    writer = SummaryWriter(log_dir + "/tensorboard_wis")
 
     # write logs
-    file_handler = logging.FileHandler(osp.join(log_dir, 'train2.log'))
+    file_handler = logging.FileHandler(osp.join(log_dir, 'train_wis.log'))
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter('%(levelname)s:%(asctime)s: %(message)s'))
     logger.addHandler(file_handler)
@@ -789,7 +789,7 @@ def main(config_path):
                 'val_loss': loss_test / iters_test,
                 'epoch': epoch,
             }
-            save_path = osp.join(log_dir, 'epoch_2nd_%05d.pth' % epoch)
+            save_path = osp.join(log_dir, 'wis_epoch_2nd_%05d.pth' % epoch)
             torch.save(state, save_path)
             
             # if estimate sigma, save the estimated simga
