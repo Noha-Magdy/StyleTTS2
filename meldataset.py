@@ -22,7 +22,7 @@ import pandas as pd
 
 _pad = "$"
 _punctuation = ';:,.!?¡¿—…"«»“” '
-_letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+_letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzابتثجحخدذرزسشصضطظعغفقكلمنهوي'
 _letters_ipa = "ɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞↓↑→↗↘'̩'ᵻ"
 
 # Export all symbols:
@@ -42,6 +42,7 @@ class TextCleaner:
                 indexes.append(self.word_index_dictionary[char])
             except KeyError:
                 print(text)
+                print("error in sympoles-----")
         return indexes
 
 np.random.seed(1)
