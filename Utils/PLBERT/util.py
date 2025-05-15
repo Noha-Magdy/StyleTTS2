@@ -21,13 +21,13 @@ def load_plbert(log_dir):
 
     files = os.listdir(log_dir)
     ckpts = []
-    for f in os.listdir(log_dir):
-        if f.startswith("step_"): ckpts.append(f)
+    # for f in os.listdir(log_dir):
+    #     if f.startswith("step_"): ckpts.append(f)
 
-    iters = [int(f.split('_')[-1].split('.')[0]) for f in ckpts if os.path.isfile(os.path.join(log_dir, f))]
-    iters = sorted(iters)[-1]
+    # iters = [int(f.split('_')[-1].split('.')[0]) for f in ckpts if os.path.isfile(os.path.join(log_dir, f))]
+    # iters = sorted(iters)[-1]
 
-    checkpoint = torch.load(log_dir + "/step_" + str(iters) + ".t7", map_location='cpu')
+    checkpoint = torch.load(log_dir + "model" + ".pth", map_location='cpu')
     state_dict = checkpoint['net']
     from collections import OrderedDict
     new_state_dict = OrderedDict()
@@ -36,7 +36,7 @@ def load_plbert(log_dir):
         if name.startswith('encoder.'):
             name = name[8:] # remove `encoder.`
             new_state_dict[name] = v
-    del new_state_dict["embeddings.position_ids"]
+    # del new_state_dict["embeddings.position_ids"]
     bert.load_state_dict(new_state_dict, strict=False)
     
     return bert

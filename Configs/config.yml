@@ -1,6 +1,6 @@
 log_dir: "Models/LJSpeech"
-first_stage_path: "/mnt/Noha/StyleTTS2/Models/LJSpeech/ASR1_epoch_1st_00198.pth"
-save_freq: 2
+first_stage_path: "/mnt/Noha/StyleTTS2/Models/LJSpeech/ar_epoch_1st_00195.pth"
+save_freq: 5
 log_interval: 10
 device: "cuda"
 epochs_1st: 200 # number of epochs for first stage training (pre-training)
@@ -12,13 +12,13 @@ second_stage_load_pretrained: true # set to true if the pre-trained model is for
 load_only_params: false # set to true if do not want to load epoch numbers and optimizer parameters
 
 F0_path: "Utils/JDC/bst.t7"
-ASR_config: "Utils/ASR/config.yml"
-ASR_path: "/mnt/Noha/AuxiliaryASR/Checkpoint/epoch_00200.pth"
-PLBERT_dir: 'Utils/PLBERT/'
+ASR_config: "/mnt/Noha/AuxiliaryASR/Configs/config.yml"
+ASR_path: "/mnt/Noha/AuxiliaryASR/Checkpoint/ar_epoch_00200.pth"
+PLBERT_dir: '/mnt/Noha/mlm_p2g_non_diacritics/'
 
 data_params:
-  train_data: "Data/train_list.txt"
-  val_data: "Data/val_list.txt"
+  train_data: "Data/train_phom.txt"
+  val_data: "Data/val_phom.txt"
   root_path: "/local/LJSpeech-1.1/wavs"
   OOD_data: "Data/OOD_texts.txt"
   min_length: 50 # sample until texts with this size are obtained for OOD texts
