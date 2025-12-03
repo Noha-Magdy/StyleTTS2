@@ -27,6 +27,7 @@ from utils import *
 from losses import *
 from optimizers import build_optimizer
 import time
+import wandb
 
 from accelerate import Accelerator
 from accelerate.utils import LoggerType
@@ -50,9 +51,21 @@ def main(config_path):
     accelerator = Accelerator(project_dir=log_dir, split_batches=True, kwargs_handlers=[ddp_kwargs])    
     if accelerator.is_main_process:
         writer = SummaryWriter(log_dir + "/tensorboard_ar")
+        wandb.init(
+            project="StyleTTS2_ClArTTS",
+            name="first_stage_w_whisper",
+            config={
+                "epochs": config['epochs_1st'],
+                "batch_size": config['batch_size'],
+                "model_params": config['model_params'],
+                "loss_params": config['loss_params'],
+                "preprocess_params": config['preprocess_params'],
+                "optimizer_params": config['optimizer_params'],
+            }
+        )
 
     # write logs
-    file_handler = logging.FileHandler(osp.join(log_dir, 'train_ar.log'))
+    file_handler = logging.FileHandler(osp.join(log_dir, 'train_exp_6.log'))
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter('%(levelname)s:%(asctime)s: %(message)s'))
     logger.logger.addHandler(file_handler)
@@ -332,6 +345,18 @@ def main(config_path):
                 writer.add_scalar('train/s2s_loss', loss_s2s, iters)
                 writer.add_scalar('train/slm_loss', loss_slm, iters)
 
+                wandb.log({
+                    "train/mel_loss": running_loss / log_interval,
+                    "train/gen_loss": loss_gen_all,
+                    "train/d_loss": d_loss,
+                    "train/mono_loss": loss_mono,
+                    "train/s2s_loss": loss_s2s,
+                    "train/slm_loss": loss_slm,
+                    "iters": iters,
+                    "epoch": epoch + 1
+                })
+            
+
                 running_loss = 0
                 
                 print('Time elasped:', time.time()-start_time)
@@ -404,8 +429,16 @@ def main(config_path):
             log_print('Validation loss: %.3f' % (loss_test / iters_test) + '\n\n\n\n', logger)
             print('\n\n\n')
             writer.add_scalar('eval/mel_loss', loss_test / iters_test, epoch + 1)
+            wandb.log({
+                "eval/mel_loss": loss_test / iters_test,
+                "epoch": epoch + 1
+            })
             attn_image = get_image(s2s_attn[0].cpu().numpy().squeeze())
             writer.add_figure('eval/attn', attn_image, epoch)
+            wandb.log({
+                "eval/attn": wandb.Image(attn_image),
+                "epoch": epoch + 1
+            })
             
             with torch.no_grad():
                 for bib in range(len(asr)):
@@ -421,8 +454,16 @@ def main(config_path):
                     y_rec = model.decoder(en, F0_real, real_norm, s)
                     
                     writer.add_audio('eval/y' + str(bib), y_rec.cpu().numpy().squeeze(), epoch, sample_rate=sr)
+                    wandb.log({
+                        f"eval/reconstructed_audio_{bib}": wandb.Audio(y_rec.cpu().numpy().squeeze(), sample_rate=sr),
+                        "epoch": epoch + 1
+                    })
                     if epoch == 0:
                         writer.add_audio('gt/y' + str(bib), waves[bib].squeeze(), epoch, sample_rate=sr)
+                        wandb.log({
+                            f"eval/gt_audio_{bib}": wandb.Audio(gt.cpu().numpy().squeeze(), sample_rate=sr),
+                            "epoch": epoch + 1
+                        })
                     
                     if bib >= 6:
                         break
@@ -438,7 +479,7 @@ def main(config_path):
                     'val_loss': loss_test / iters_test,
                     'epoch': epoch,
                 }
-                save_path = osp.join(log_dir, 'ar_epoch_1st_%05d.pth' % epoch)
+                save_path = osp.join(log_dir, 'exp_6_epoch_1st_%05d.pth' % epoch)
                 torch.save(state, save_path)
                                 
     if accelerator.is_main_process:

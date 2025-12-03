@@ -1,5 +1,5 @@
-log_dir: "Models/LJSpeech"
-first_stage_path: "/mnt/Noha/StyleTTS2/Models/LJSpeech/ar_epoch_1st_00195.pth"
+log_dir: "/home/aiadmin/Noha/StyleTTS/logs"
+first_stage_path: ""
 save_freq: 5
 log_interval: 10
 device: "cuda"
@@ -12,15 +12,15 @@ second_stage_load_pretrained: true # set to true if the pre-trained model is for
 load_only_params: false # set to true if do not want to load epoch numbers and optimizer parameters
 
 F0_path: "Utils/JDC/bst.t7"
-ASR_config: "/mnt/Noha/AuxiliaryASR/Configs/config.yml"
-ASR_path: "/mnt/Noha/AuxiliaryASR/Checkpoint/ar_epoch_00200.pth"
-PLBERT_dir: '/mnt/Noha/mlm_p2g_non_diacritics/'
+ASR_config: "Utils/ASR/config.yml"
+ASR_path: "Utils/ASR/epoch_00080.pth"
+PLBERT_dir: 'Utils/PLBERT/'
 
 data_params:
-  train_data: "Data/train_phom.txt"
-  val_data: "Data/val_phom.txt"
-  root_path: "/local/LJSpeech-1.1/wavs"
-  OOD_data: "Data/OOD_texts.txt"
+  train_data: "/home/aiadmin/Noha/StyleTTS/Clean_data/train.txt"
+  val_data: "/home/aiadmin/Noha/StyleTTS/Clean_data/test.txt"
+  root_path: "/home/aiadmin/Noha/StyleTTS/Clean_data/wav"
+  OOD_data: "/home/aiadmin/Noha/StyleTTS/Clean_data/OOD.txt"
   min_length: 50 # sample until texts with this size are obtained for OOD texts
 
 preprocess_params:
@@ -41,7 +41,7 @@ model_params:
   n_layer: 3
   n_mels: 80
 
-  n_token: 206 # number of phoneme tokens
+  n_token: 178 # number of phoneme tokens
   max_dur: 50 # maximum duration of a single phoneme
   style_dim: 128 # style vector size
   

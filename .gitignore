@@ -27,6 +27,7 @@ settings_local.py
 
 # Ignore package dependencies
 venv/
+wandb/
 
 
 #Ignore follwing folders

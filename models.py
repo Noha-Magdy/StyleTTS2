@@ -585,7 +585,7 @@ def load_F0_models(path):
     # load F0 model
 
     F0_model = JDCNet(num_class=1, seq_len=192)
-    params = torch.load(path, map_location='cpu')['net']
+    params = torch.load(path, map_location='cpu', weights_only=False)['net']
     F0_model.load_state_dict(params)
     _ = F0_model.train()
     
@@ -721,7 +721,7 @@ def build_model(args, text_aligner, pitch_extractor, bert):
 #     return model, optimizer, epoch, iters
 
 def load_checkpoint(model, optimizer, path, load_only_params=True, ignore_modules=[]):
-    state = torch.load(path, map_location='cpu')
+    state = torch.load(path, map_location='cpu', weights_only=False)
     params = state['net']
 
     for key in model:
