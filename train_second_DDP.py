@@ -33,6 +33,7 @@ from accelerate.utils import LoggerType
 from accelerate import DistributedDataParallelKwargs
 
 from torch.utils.tensorboard import SummaryWriter
+import wandb
 
 import logging
 from accelerate.logging import get_logger
@@ -74,9 +75,21 @@ def main(config_path):
     accelerator = Accelerator(project_dir=log_dir, split_batches=True, kwargs_handlers=[ddp_kwargs])    
     if accelerator.is_main_process:
         writer = SummaryWriter(log_dir + "/tensorboard_ddp_ar")
+        wandb.init(
+            project="StyleTTS2_ClArTTS",
+            name="second_stage_w_whisper",
+            config={
+                "epochs": config['epochs_2nd'],
+                "batch_size": config['batch_size'],
+                "model_params": config['model_params'],
+                "loss_params": config['loss_params'],
+                "preprocess_params": config['preprocess_params'],
+                "optimizer_params": config['optimizer_params'],
+            }
+        )
 
     # write logs
-    file_handler = logging.FileHandler(osp.join(log_dir, 'train_ddp_ar.log'))
+    file_handler = logging.FileHandler(osp.join(log_dir, 'exp_6_second_stage.log'))
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter('%(levelname)s:%(asctime)s: %(message)s'))
     logger.logger.addHandler(file_handler)
@@ -507,6 +520,23 @@ def main(config_path):
                 writer.add_scalar('train/diff_loss', loss_diff, iters)
                 writer.add_scalar('train/d_loss_slm', d_loss_slm, iters)
                 writer.add_scalar('train/gen_loss_slm', loss_gen_lm, iters)
+
+                wandb.log({
+                    "train/mel_loss": running_loss / log_interval,
+                    "train/gen_loss": loss_gen_all,
+                    "train/d_loss": d_loss,
+                    "train/ce_loss": loss_ce,
+                    "train/dur_loss": loss_dur,
+                    "train/slm_loss": loss_lm,
+                    "train/norm_loss": loss_norm_rec,
+                    "train/F0_loss": loss_F0_rec,
+                    "train/sty_loss": loss_sty,
+                    "train/diff_loss": loss_diff,
+                    "train/d_loss_slm": d_loss_slm,
+                    "train/gen_loss_slm": loss_gen_lm,
+                    "epoch": epoch + 1,
+                    "iters": iters
+                })
                 
                 running_loss = 0
                 
@@ -632,6 +662,14 @@ def main(config_path):
             writer.add_scalar('eval/dur_loss', loss_test / iters_test, epoch + 1)
             writer.add_scalar('eval/F0_loss', loss_f / iters_test, epoch + 1)
 
+            wandb.log({
+            "eval/mel_loss": loss_test / iters_test,
+            "eval/dur_loss": loss_align / iters_test,
+            "eval/F0_loss": loss_f / iters_test,
+            "epoch": epoch + 1,
+            "iters": iters
+              })
+
             with torch.no_grad():
                 for bib in range(len(asr)):
                     mel_length = int(mel_input_length[bib].item())
@@ -646,6 +684,7 @@ def main(config_path):
                     y_rec = model.decoder(en, F0_real, real_norm, s)
 
                     writer.add_audio('eval/y' + str(bib), y_rec.cpu().numpy().squeeze(), epoch, sample_rate=sr)
+                    wandb.log({'eval/y_rec' + str(bib): wandb.Audio(r, sample_rate=sr)})
 
                     s_dur = model.predictor_encoder(gt.unsqueeze(1))
                     p_en = p[bib, :, :mel_length // 2].unsqueeze(0)
@@ -655,9 +694,11 @@ def main(config_path):
                     y_pred = model.decoder(en, F0_fake, N_fake, s)
 
                     writer.add_audio('pred/y' + str(bib), y_pred.cpu().numpy().squeeze(), epoch, sample_rate=sr)
+                    wandb.log({'eval/y_pred' + str(bib): wandb.Audio(pred, sample_rate=sr)}) 
 
                     if epoch == 0:
                         writer.add_audio('gt/y' + str(bib), waves[bib].squeeze(), epoch, sample_rate=sr)
+                        wandb.log({'eval/y_gt' + str(bib): wandb.Audio(waves[bib].squeeze(), sample_rate=sr)})
 
                     if bib >= 5:
                         break
@@ -673,7 +714,7 @@ def main(config_path):
                     'val_loss': loss_test / iters_test,
                     'epoch': epoch,
                 }
-                save_path = osp.join(log_dir, 'ar_ddp_epoch_2nd_%05d.pth' % epoch)
+                save_path = osp.join(log_dir, 'exp_6_ar_ddp_epoch_2nd_%05d.pth' % epoch)
                 torch.save(state, save_path)
 
 if __name__=="__main__":

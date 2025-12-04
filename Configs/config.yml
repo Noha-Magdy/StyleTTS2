@@ -1,5 +1,5 @@
 log_dir: "/home/aiadmin/Noha/StyleTTS/logs"
-first_stage_path: ""
+first_stage_path: "/home/aiadmin/Noha/StyleTTS/logs/exp_6_epoch_1st_00110.pth"
 save_freq: 5
 log_interval: 10
 device: "cuda"
