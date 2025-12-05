@@ -682,6 +682,10 @@ def main(config_path):
                     real_norm = log_norm(gt.unsqueeze(1)).squeeze(1)
 
                     y_rec = model.decoder(en, F0_real, real_norm, s)
+                    r = y_rec.squeeze().detach()
+                    if r.is_cuda:
+                        r = r.cpu()
+
 
                     writer.add_audio('eval/y' + str(bib), y_rec.cpu().numpy().squeeze(), epoch, sample_rate=sr)
                     wandb.log({'eval/y_rec' + str(bib): wandb.Audio(r, sample_rate=sr)})
@@ -692,6 +696,9 @@ def main(config_path):
                     F0_fake, N_fake = model.predictor.module.F0Ntrain(p_en, s_dur)
 
                     y_pred = model.decoder(en, F0_fake, N_fake, s)
+                    pred = y_pred.squeeze().detach()
+                    if pred.is_cuda:
+                        pred = pred.cpu()
 
                     writer.add_audio('pred/y' + str(bib), y_pred.cpu().numpy().squeeze(), epoch, sample_rate=sr)
                     wandb.log({'eval/y_pred' + str(bib): wandb.Audio(pred, sample_rate=sr)}) 
